@@ -31,6 +31,31 @@ const getBookByISBN = (isbn) => {
   });
 };
 
+// Helper function to get books by author using Promise (simulating async operation)
+const getBooksByAuthor = (author) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const bookKeys = Object.keys(books);
+      const booksByAuthor = {};
+      
+      for (let i = 0; i < bookKeys.length; i++) {
+        const isbn = bookKeys[i];
+        if (books[isbn].author === author) {
+          booksByAuthor[isbn] = books[isbn];
+        }
+      }
+      
+      if (Object.keys(booksByAuthor).length > 0) {
+        resolve(booksByAuthor);
+      } else {
+        reject(new Error("No books found for this author"));
+      }
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
 
 public_users.post("/register", (req,res) => {
   //Write your code here
@@ -83,24 +108,19 @@ public_users.get('/isbn/:isbn', async function (req, res) {
  });
   
 // Get book details based on author
-public_users.get('/author/:author',function (req, res) {
+public_users.get('/author/:author', async function (req, res) {
   //Write your code here
-  const author = req.params.author;
-  const bookKeys = Object.keys(books);
-  const booksByAuthor = {};
-  
-  for (let i = 0; i < bookKeys.length; i++) {
-    const isbn = bookKeys[i];
-    if (books[isbn].author === author) {
-      booksByAuthor[isbn] = books[isbn];
-    }
-  }
-  
-  if (Object.keys(booksByAuthor).length > 0) {
+  try {
+    const author = req.params.author;
+    // Using async-await with Promise
+    const booksByAuthor = await getBooksByAuthor(author);
     res.setHeader('Content-Type', 'application/json');
     return res.status(200).send(JSON.stringify(booksByAuthor, null, 2));
-  } else {
-    return res.status(404).json({message: "No books found for this author"});
+  } catch (error) {
+    if (error.message === "No books found for this author") {
+      return res.status(404).json({message: "No books found for this author"});
+    }
+    return res.status(500).json({message: "Error retrieving books by author", error: error.message});
   }
 });
 
