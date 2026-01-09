@@ -56,6 +56,31 @@ const getBooksByAuthor = (author) => {
   });
 };
 
+// Helper function to get books by title using Promise (simulating async operation)
+const getBooksByTitle = (title) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const bookKeys = Object.keys(books);
+      const booksByTitle = {};
+      
+      for (let i = 0; i < bookKeys.length; i++) {
+        const isbn = bookKeys[i];
+        if (books[isbn].title === title) {
+          booksByTitle[isbn] = books[isbn];
+        }
+      }
+      
+      if (Object.keys(booksByTitle).length > 0) {
+        resolve(booksByTitle);
+      } else {
+        reject(new Error("No books found with this title"));
+      }
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
 
 public_users.post("/register", (req,res) => {
   //Write your code here
@@ -125,24 +150,19 @@ public_users.get('/author/:author', async function (req, res) {
 });
 
 // Get all books based on title
-public_users.get('/title/:title',function (req, res) {
+public_users.get('/title/:title', async function (req, res) {
   //Write your code here
-  const title = req.params.title;
-  const bookKeys = Object.keys(books);
-  const booksByTitle = {};
-  
-  for (let i = 0; i < bookKeys.length; i++) {
-    const isbn = bookKeys[i];
-    if (books[isbn].title === title) {
-      booksByTitle[isbn] = books[isbn];
-    }
-  }
-  
-  if (Object.keys(booksByTitle).length > 0) {
+  try {
+    const title = req.params.title;
+    // Using async-await with Promise
+    const booksByTitle = await getBooksByTitle(title);
     res.setHeader('Content-Type', 'application/json');
     return res.status(200).send(JSON.stringify(booksByTitle, null, 2));
-  } else {
-    return res.status(404).json({message: "No books found with this title"});
+  } catch (error) {
+    if (error.message === "No books found with this title") {
+      return res.status(404).json({message: "No books found with this title"});
+    }
+    return res.status(500).json({message: "Error retrieving books by title", error: error.message});
   }
 });
 
