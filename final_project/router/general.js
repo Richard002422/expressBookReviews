@@ -1,8 +1,20 @@
 const express = require('express');
+const axios = require('axios');
 let books = require("./booksdb.js");
 let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
 const public_users = express.Router();
+
+// Helper function to get books using Promise (simulating async operation)
+const getBooks = () => {
+  return new Promise((resolve, reject) => {
+    try {
+      resolve(books);
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
 
 
 public_users.post("/register", (req,res) => {
@@ -26,10 +38,16 @@ public_users.post("/register", (req,res) => {
 });
 
 // Get the book list available in the shop
-public_users.get('/',function (req, res) {
+public_users.get('/', async function (req, res) {
   //Write your code here
-  res.setHeader('Content-Type', 'application/json');
-  return res.status(200).send(JSON.stringify(books, null, 2));
+  try {
+    // Using async-await with Promise
+    const booksList = await getBooks();
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(200).send(JSON.stringify(booksList, null, 2));
+  } catch (error) {
+    return res.status(500).json({message: "Error retrieving books", error: error.message});
+  }
 });
 
 // Get book details based on ISBN
